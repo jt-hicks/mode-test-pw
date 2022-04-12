@@ -49,6 +49,6 @@ for (i in seq_along(data)) {
   history_order[, i] <- kappa
   mod$reorder(kappa)
   y <- mod$state()
-  y[, 5] <- y[, 5] * exp(rnorm(n_particles) * beta_volatility)
+  y[5, ] <- y[5, ] * exp(rnorm(n_particles) * beta_volatility)
   mod$update_state(state = y, reset_step_size = FALSE)
 }
