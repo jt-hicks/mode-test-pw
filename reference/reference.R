@@ -36,6 +36,7 @@ state <- matrix(y0, length(y0), n_particles,
 
 set.seed(1)
 log_likelihood <- 0
+log_likelihood_step <- numeric(nrow(data))
 
 for (i in seq_len(nrow(data))) {
   d <- data[i, ]
@@ -47,6 +48,7 @@ for (i in seq_len(nrow(data))) {
   }
 
   weight <- exp(log_weight)
+  log_likelihood_step[[i]] <- log(mean(weight))
   log_likelihood <- log_likelihood + log(mean(weight))
 
   kappa <- sample.int(n_particles, prob = weight, replace = TRUE)
