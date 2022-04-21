@@ -33,6 +33,7 @@ data <- unname(split(observed, seq_len(nrow(observed))))[-1]
 gen <- mode::mode("malaria.cpp")
 
 history_index <- setNames(1:5, c("Sh", "Ih", "Sv", "Iv", "beta"))
+beta_index <- 5L
 n_state <- length(history_index)
 n_data <- length(data)
 history_value <- array(NA_real_, c(n_state, n_particles, n_data))
@@ -56,15 +57,14 @@ for (i in seq_len(n_data)) {
 
   kappa <- sample.int(n_particles, prob = weights$weights, replace = TRUE)
 
-  history_value[, , i] <- mod$state()[history_index, ]
+  history_value[, , i] <- mod$state(history_index)
   history_order[, i] <- kappa
 
   mod$reorder(kappa)
 
   ## Stochastic update; we'll need something better for this later.
-  y_full <- mod$state()
-  y_full[5, ] <- y_full[5, ] * exp(rnorm(n_particles) * beta_volatility)
-  mod$update_state(state = y_full, reset_step_size = FALSE)
+  beta <- mod$state(beta_index) * exp(rnorm(n_particles) * beta_volatility)
+  mod$update_state(state = beta, index = beta_index, reset_step_size = FALSE)
 }
 
 ## This will assemble the full history, but because we sample down to
