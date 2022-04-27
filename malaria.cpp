@@ -2,6 +2,8 @@ class malaria {
 public:
   using data_type = mode::no_data;
   using internal_type = mode::no_internal;
+  using rng_state_type = dust::random::generator<double>;
+
   struct shared_type {
     int nrates;
     double a;
@@ -14,6 +16,7 @@ public:
     double init_Sv;
     double init_Iv;
     double init_beta;
+    double beta_volatility;
   };
 
   malaria(const mode::pars_type<malaria>& pars) : shared(pars.shared) {
@@ -41,6 +44,13 @@ public:
       deriv_Ev[i] = progress_Ev * Ev[i - 1] -
         progress_Ev * Ev[i] - shared->mu * Ev[i];
     }
+  }
+
+  void update_stochastic(double t, std::vector<double>& y,
+                         rng_state_type& rng_state) {
+    const double r = dust::random::normal<double>(rng_state, 0,
+                                                  shared->beta_volatility);
+    y[4] *= std::exp(r); // updates beta
   }
 
   std::vector<double> initial(double time) {
@@ -78,13 +88,15 @@ mode::pars_type<malaria> mode_pars<malaria>(cpp11::list pars) {
   double init_Ih = with_default<double>(pars["init_Ih"], 0.8);
   double init_Sv = with_default<double>(pars["init_Sv"], 100);
   double init_Iv = with_default<double>(pars["init_Iv"], 1);
+  double beta_volatility = with_default<double>(pars["beta_volatility"], 0.5);
   double bh = 0.05;
   double bv = 0.05;
   double mu = -std::log(0.9);
   double init_beta = mu;
 
   malaria::shared_type shared{nrates, a, r, tau, bh, bv, mu,
-                              init_Ih, init_Sv, init_Iv, init_beta};
+                              init_Ih, init_Sv, init_Iv,
+                              init_beta, beta_volatility};
   return mode::pars_type<malaria>(shared);
 }
 

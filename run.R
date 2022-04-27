@@ -41,7 +41,7 @@ history_order <- array(NA_integer_, c(n_particles, n_data))
 
 mod <- gen$new(list(), 0, n_particles)
 mod$set_index(2)
-set.seed(1)
+mod$set_stochastic_schedule(observed$t[-1])
 
 mod$update_state(time = 0)
 log_likelihood <- 0
@@ -61,10 +61,6 @@ for (i in seq_len(n_data)) {
   history_order[, i] <- kappa
 
   mod$reorder(kappa)
-
-  ## Stochastic update; we'll need something better for this later.
-  beta <- mod$state(beta_index) * exp(rnorm(n_particles) * beta_volatility)
-  mod$update_state(state = beta, index = beta_index, reset_step_size = FALSE)
 }
 
 ## This will assemble the full history, but because we sample down to
