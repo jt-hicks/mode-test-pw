@@ -1,7 +1,7 @@
-gen <- odin::odin("reference/model.R")
+res <- pkgload::load_all("malaria")
+gen <- res$env$odinmodel
 
-case_compare <- function(state, observed, pars) {
-  proportion_modelled <- state[["Ih"]]
+case_compare <- function(proportion_modelled, observed) {
   dbinom(x = observed$positive,
          size = observed$tested,
          prob = proportion_modelled,
@@ -39,42 +39,34 @@ n_particles <- 100
 pars <- list(init_Ih = 0.8,
              init_Sv = 100,
              init_Iv = 1,
-             nrates = 15,
-             init_beta = -log(0.9)) # must match mu
+             nrates = 15)
 
-beta_volatility <- 0.5
-
-## Annoyingly there is really no good way of getting a named input
-## vector out of odin (see mrc-3156), so there's a bit of a fight here
-## to pull it off.
 set.seed(1)
-log_likelihood <- rep(0, 50)
-for (s in seq_along(log_likelihood)) {
-  mod <- gen$new(user = pars)
-  idx <- seq_along(mod$initial(0)) + 1
-  y0 <- mod$run(c(0, 1))[1,]
-  state <- matrix(y0, length(y0), n_particles,
-                  dimnames = list(names(y0), NULL))
 
-  log_likelihood_step <- numeric(nrow(data))
+log_likelihood <- rep(0, 50)
+
+for (s in seq_along(log_likelihood)) {
+  mod <- gen$new(pars, 0, n_particles, seed = 1)
+  mod$set_index(c(Ih = 2L))
+  mod$set_stochastic_schedule(data$t_end)
 
   for (i in seq_len(nrow(data))) {
     d <- data[i,]
 
     log_weight <- numeric(n_particles)
+    state <- mod$run(d$t_end)
+
     for (j in seq_len(n_particles)) {
-      state[, j] <- mod$run(c(d$t_start, d$t_end), state[idx, j])[2,]
-      log_weight[[j]] <- case_compare(state[, j], d, pars)
+      log_weight[[j]] <- case_compare(state["Ih", j], d)
     }
 
     scaled_weight <- scale_log_weights(log_weight)
-    log_likelihood_step[[i]] <- scaled_weight$average
     log_likelihood[[s]] <- log_likelihood[[s]] + scaled_weight$average
 
     kappa <- sample.int(n_particles, prob = scaled_weight$weights, replace = TRUE)
-    state <- state[, kappa]
-    state["beta",] <- state["beta",] * exp(rnorm(n_particles) * beta_volatility)
+    mod$reorder(kappa)
   }
+
 }
 
 mean(log_likelihood)

@@ -1,0 +1,4 @@
+Package: odinmodel55130259
+LinkingTo: cpp11, dust
+Version: 0.0.1
+SystemRequirements: C++11
