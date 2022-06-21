@@ -1,0 +1,4 @@
+Package: mipodinmodel85dc80d9
+LinkingTo: cpp11, dust
+Version: 0.0.1
+SystemRequirements: C++11
