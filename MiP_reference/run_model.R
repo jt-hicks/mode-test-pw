@@ -46,8 +46,6 @@ model_run <- run_model(age=init_age, init_EIR=init_EIR, init_ft=prop_treated,
                        anc_age_min = 15,
                        anc_age_max = 20,
                        lag_rates = 10,
-                       lag_ratesMos = 10
-                       )
-
+                       lag_ratesMos = 10)
 # plot model output (here we plot clinical incidence in children under 5)
 #plot(model_run$t, model_run$prev)

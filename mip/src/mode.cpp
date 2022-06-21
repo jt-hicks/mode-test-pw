@@ -478,7 +478,8 @@ public:
     return state;
   }
   void update_stochastic(double t, const std::vector<double>& state, rng_state_type& rng_state, std::vector<double>& state_next) {
-    
+    const real_type betaa_td = state[0];
+    state_next[0] = betaa_td + 0.15;
   }
   void rhs(double t, const std::vector<double>& state, std::vector<double>& dstatedt) {
     const real_type * S = state.data() + shared->offset_variable_S;
@@ -1096,7 +1097,7 @@ mode::pars_type<mipodinmodel> mode_pars<mipodinmodel>(cpp11::list user) {
   using real_type = typename mipodinmodel::real_type;
   auto shared = std::make_shared<mipodinmodel::shared_type>();
   mipodinmodel::internal_type internal;
-  shared->initial_betaa_td = 0;
+  shared->initial_betaa_td = 0.65000000000000002;
   shared->aD = NA_REAL;
   shared->age_20_factor = NA_REAL;
   shared->age05 = NA_INTEGER;

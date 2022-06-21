@@ -39,7 +39,13 @@ run_model <- function(model = "odin_model",
   mod <- generator(user = state_use, use_dde = TRUE)
   tt <- seq(0, time, 1)
   # run model
-  mod_run <- mod$run(betaa_times, verbose=FALSE,step_size_max=9)
+  n_particles <- 10
+  start_time <- Sys.time()
+  for (j in seq_len(n_particles)) {
+    mod_run <- mod$run(tt, verbose=FALSE,step_size_max=9)
+  }
+  end_time <- Sys.time()
+  message(end_time - start_time)
 
   # shape output
   out <- mod$transform_variables(mod_run)
@@ -47,4 +53,3 @@ run_model <- function(model = "odin_model",
   # return mod
   return(out)
 }
-

@@ -418,8 +418,9 @@ incv <- ince_delay[lag_ratesMos]*lag_ratesMos/delayMos *surv
 
 # feed in betaa values from a random walk
 ####Comment in if reading in betaa values#####
-initial(betaa_td) <- 0
+initial(betaa_td) <- 0.65
 deriv(betaa_td) <- 0
+#update(betaa_td) <- betaa_td + 0.15
 
 #####Comment next line out if reading in betaa values#####
 # betaa_td <- mv * mu

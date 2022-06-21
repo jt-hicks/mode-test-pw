@@ -53,17 +53,17 @@ state <- equilibrium_init_create(age_vector = init_age,
 # create odin generator
 res <- pkgload::load_all("mip")
 generator <- res$env$mipodinmodel
-
 # create model with initial values
-mod <- generator$new(state, time = 0, n_particles = 1)
+mod <- generator$new(state, time = 0, n_particles = 10)
 # run model
-res <- seq_along(betaa_times)
+res <- rep(0, time + 1)
 info <- mod$info()
 mod$set_index(c(prev = info$index$prev))
-
-for (t in seq_along(betaa_times)){
-  res[[t]] <- mod$run(betaa_times[[t]])["prev", ]
-  mod$update_state(state = betaa_vals[[t]], index = 1)
+mod$set_stochastic_schedule(betaa_times)
+start_time <- Sys.time()
+for (t in 0:time){
+  res[[t + 1]] <- mod$run(t)["prev", 1]
 }
-
-#plot(betaa_times, res)
+end_time <- Sys.time()
+end_time - start_time
+#plot(0:time, res)
