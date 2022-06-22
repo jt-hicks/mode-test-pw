@@ -50,16 +50,14 @@ state <- equilibrium_init_create(age_vector = init_age,
                                  het_brackets = het_brackets,
                                  rA_preg = rA_preg)
 
-# create odin generator
-res <- pkgload::load_all("mip")
-generator <- res$env$mipodinmodel
-# create model with initial values
+
+generator <- odin.dust::odin_dust("mode/mipodinmodel.R")
 mod <- generator$new(state, time = 0, n_particles = 10)
-# run model
+
 res <- rep(0, time + 1)
 info <- mod$info()
 mod$set_index(c(prev = info$index$prev))
-mod$set_stochastic_schedule(betaa_times)
+#mod$set_stochastic_schedule(betaa_times)
 start_time <- Sys.time()
 for (t in 0:time){
   res[[t + 1]] <- mod$run(t)["prev", 1]

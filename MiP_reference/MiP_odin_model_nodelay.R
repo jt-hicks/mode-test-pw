@@ -438,7 +438,7 @@ odin_model <- odin::odin({
   betaa_vals[]<-user()
   dim(betaa_vals)<-user()
   # Interpolate constant betaa values between user-defined switch points
-  betaa_td<-interpolate(betaa_times, betaa_vals, "constant")
+  betaa_td<- 0.65#interpolate(betaa_times, betaa_vals, "constant")
 
 #####Comment next line out if reading in betaa values#####
    # betaa_td <- mv * mu
