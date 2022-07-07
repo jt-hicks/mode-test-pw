@@ -1,6 +1,6 @@
 # Test repo for running Malaria in Pregnancy model through a particle filter
 This repo contains a bunch of test code from various stages of making this work and most files in sub-directories can be ignored. 
-The only relevant files now are those in the root directory and [MiP-given/equilibrium-init-create.R], [MiP-given/model_parameters.R], and [MiP-given/MZ_multi_rates.rds] 
+The only relevant files now are those in the root directory and [MiP-given/equilibrium-init-create.R](MiP-given/equilibrium-init-create.R), [MiP-given/model_parameters.R](MiP-given/model_parameters.R), and [MiP-given/MZ_multi_rates.rds](MiP-given/MZ_multi_rates.rds) 
 for generating the model parameters.
 
 ## Installation
@@ -86,6 +86,6 @@ matlines(data_raw$t, t(history[2, , -1]), col = "#0000ff22", lty = 1)
 ### Malaria in pregnancy model
 Run and plot particle trajectories by running the `run.R` script.
 This follows exactly the same steps as above. `betaa_td` in this model isn't actually being updated via a stochastic process,
- but just incremented every time step as per the example you gave us. This can be edited in the model code [mipodinmodel.R] (see the toy model syntax in [toyodinmodel.R] as a reference).
-The parameters for the model have been generated using the exact same scripts you provided us (now found at [MiP-given/model_parameters.R]
-and [MiP-given/equilibrium-init-create.R])
+ but just incremented every time step as per the example you gave us. This can be edited in the model code [mipodinmodel.R](mipodinmodel.R) (see the toy model syntax in [toyodinmodel.R](toyodinmodel.R) as a reference).
+The parameters for the model have been generated using the exact same scripts you provided us (now found at [MiP-given/model_parameters.R](MiP-given/model_parameters.R)
+and [MiP-given/equilibrium-init-create.R](MiP-given/equilibrium-init-create.R))
