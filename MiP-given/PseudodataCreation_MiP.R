@@ -7,13 +7,13 @@ library(ggplot2)
 
 #Call functions housed in other files for simplicity
 #Function that calculates the initial equilibrium state
-source("MiP_model/equilibrium-init-create.R")
+source("MiP-given/equilibrium-init-create.R")
 #Function that defines model parameters
-source("MiP_model/model_parameters.R")
+source("MiP-givendel/model_parameters.R")
 #Function that actually runs the odin code and generates model output
-source("MiP_model/run_model_function.R")
+source("MiP-given/run_model_function.R")
 #Odin object that specifies the model in the odin language
-source("MiP_model/MiP_odin_model_nodelay.R")
+source("MiP-given/MiP_odin_model_nodelay.R")
 
 # create a vector of age categories
 init_age <- c(0,0.25,0.5,0.75,1,1.25,1.5,1.75,2,3.5,5,7.5,10,15,20,30,40,50,60,70,80)
@@ -44,7 +44,7 @@ beta_times<-seq(0,time_period,by=30)
 beta_volatility<-0.5
 beta_vals=genRandWalk(length(beta_times)-1,beta_volatility,init_beta)
 keep <- beta_vals
-save(keep,file='MiP_model/beta_vals_mip.rData')
+save(keep,file='MiP-given/beta_vals_mip.rData')
 
 # Run model
 
@@ -70,7 +70,7 @@ days <- output[,c('t','prev')]
 days$tested <- round(rnorm(n = length(days$t), mean = 10000, sd = 100))
 days$positive <- rbinom(n = length(days$t), size = days$tested, p = days$prev)
 test_data <- days[seq(1,nrow(days),30),c('t','tested','positive')]
-write.csv(test_data, 'MiP_model/casedata_monthly.csv', row.names = FALSE)
+write.csv(test_data, 'MiP-given/casedata_monthly.csv', row.names = FALSE)
 
 ggplot(test_data, aes(positive)) +
   geom_histogram()
