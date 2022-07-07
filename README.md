@@ -85,4 +85,6 @@ matlines(data_raw$t, t(history[2, , -1]), col = "#0000ff22", lty = 1)
 
 ### Malaria in pregnancy model
 Run and plot particle trajectories by running the `run.R` script.
-This follows exactly the same steps as above.
+This follows exactly the same steps as above. The beta in this model isn't actually being updated via a stochastic process,
+ but just incremented every time step as per the example you gave us. This can be edited in the odin
+ model code `mipodinmodel.R` (see the toy model syntax in `toyodinmodel.R` as a reference).

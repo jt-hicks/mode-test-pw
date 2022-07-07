@@ -75,9 +75,7 @@ beta_volatility <- 0.5
 # Vector births/deaths - a piece-wise constant function that changes
 # every 30 days based on a random-walk function.
 initial(beta) <- -log(p)
-deriv(beta) <- 0
-#update(beta) <- beta * exp(rnorm(0, beta_volatility))
-#output(beta) <- beta
+update(beta) <- beta * exp(rnorm(0, beta_volatility))
 
 #Check model equations
 N <- Sh + Ih
