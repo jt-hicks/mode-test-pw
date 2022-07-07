@@ -17,7 +17,7 @@ index <- function(info) {
        state = c(prev = info$index$prev))
 }
 
-stochastic_schedule <- seq(from = 30, by = 30, to = 1800)
+stochastic_schedule <- seq(from = 60, by = 30, to = 1830)
 
 model <- odin.dust::odin_dust("mipodinmodel.R")
 n_particles <- 100

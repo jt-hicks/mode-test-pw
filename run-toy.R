@@ -15,7 +15,7 @@ compare <- function(state, observed, pars = NULL) {
          log = TRUE)
 }
 
-stochastic_schedule <- seq(from = 30, by = 30, to = 1800)
+stochastic_schedule <- seq(from = 60, by = 30, to = 1830)
 
 model <- odin.dust::odin_dust("toyodinmodel.R")
 n_particles <- 100
