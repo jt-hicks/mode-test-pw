@@ -1,4 +1,6 @@
+library("odin.dust")
 library("odin")
+library("patchwork")
 source("MiP-given/model_parameters.R")
 source("MiP-given/equilibrium-init-create-stripped.R")
 
@@ -74,21 +76,49 @@ compare <- function(state, observed, pars = NULL) {
 }
 
 index <- function(info) {
-  list(run = c(inc = info$index$inc),
+  list(run = c(inc = info$index$prev),
        state = c(prev = info$index$prev))
 }
 stochastic_schedule <- seq(from = 60, by = 30, to = 1830)
 #### NB the volatility and initial EIR is hard-coded in the odinmodelmatchedstoch bw lines 230 and 234###
 model <- odin.dust::odin_dust("original_malaria/odinmodelmatchedstoch.R")
 n_particles <- 100
-p <- mcstate::particle_filter$new(data, model, n_particles, compare,
+set.seed(1)
+
+### single with no parallelisation
+p_single <- mcstate::particle_filter$new(data, model, n_particles, compare,
                                   index = index, seed = 1L,
-                                  stochastic_schedule = stochastic_schedule)
-lik <- p$run(pars, save_history = TRUE)
+                                  stochastic_schedule = stochastic_schedule
+                                  )
 
-### for me throws 'too many steps' error before it gets here ###
+### takes about 15-20 seconds on my desktop 
+start.time <- Sys.time()
+lik_single <- p_single$run(pars, save_history = TRUE)
+print(Sys.time()-start.time)
+history_single <- p_single$history()
 
-history <- p$history()
-matplot(data_raw$t, t(history[1, , -1]), type = "l",
+###but looks absolutely lauurrrvely
+matplot(data_raw$t, t(history_single[1, , -1]), type = "l",
         xlab = "Time", ylab = "State",
-        col = "#ff000022", lty = 1, ylim = range(history))
+        col = "#ff000022", lty = 1, ylim = range(history_single))
+lines(out$t,out$prev,col="blue",lwd=4)
+
+## reset seed
+set.seed(1)
+## run over 4 threads
+p_para <- mcstate::particle_filter$new(data, model, n_particles, compare,
+                                         index = index, seed = 1L,
+                                         stochastic_schedule = stochastic_schedule,
+                                       n_threads=4
+)
+## now takes 3-5 secs
+start.time <- Sys.time()
+lik_para<- p_para$run(pars, save_history = TRUE)
+print(Sys.time()-start.time)
+
+history_para <- p_para$history()
+## but looks a bit less perfect :(
+matplot(data_raw$t, t(history_para[1, , -1]), type = "l",
+        xlab = "Time", ylab = "State",
+        col = "#ff000022", lty = 1, ylim = range(history_para))
+lines(out$t,out$prev,col="blue",lwd=4)
