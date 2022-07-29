@@ -6,7 +6,7 @@ library(didehpc)
 library(pkgdepends)
 
 root <- "contexts"
-sources <- "loop_function.R"
+sources <- "loop_function_toy.R"
 config <- didehpc::didehpc_config(cores = 4, parallel = TRUE)
 
 
