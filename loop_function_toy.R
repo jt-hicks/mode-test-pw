@@ -1,6 +1,4 @@
-pf_loop <- function(data_file,n_loop,n_particles=100,volatility=0.5,freq=1){
-  data_raw <- read.csv(data_file,
-                       stringsAsFactors = FALSE)
+pf_loop <- function(data_raw,n_loop,n_particles=100,volatility=0.5,freq=1){
   data <- mcstate::particle_filter_data(data_raw, time = "t", rate = NULL, initial_time = 0)
   
   index <- function(info) {
@@ -25,7 +23,8 @@ pf_loop <- function(data_file,n_loop,n_particles=100,volatility=0.5,freq=1){
   pars <- list(init_Ih = 0.8,
                init_Sv = 100,
                init_Iv = 1,
-               nrates = 15)
+               nrates = 15,
+               beta_volatility = volatility)
   n_particles <- c(10,50,100,200,500)
   lik_hist <- matrix(nrow=n_loop,ncol=length(n_particles))
   #parallel::clusterExport(cl=NULL,varlist = c('mode_toyodinmodel_alloc'))

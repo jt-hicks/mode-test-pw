@@ -3,6 +3,7 @@
 # of parallelisation of deterministic, continuous-time model parameter estimation.
 # Includes delay function and time-varying random walk parameter.
 
+odin_model <- odin::odin({
 ################
 # Human States #
 ################
@@ -26,7 +27,12 @@ deriv(Ev[2:nrates]) <- (nrates/tau) * Ev[i - 1] - (nrates/tau) * Ev[i] - mu * Ev
 # Rate of change of the infectious vector population
 deriv(Iv) <- (nrates/tau) * Ev[nrates] - mu * Iv
 # Force of infection from humans to vectors
-foi_v <- a * bv * Ih
+foi_v <- a * bv * Ih                 
+# Vector births/deaths - a piece-wise constant function that changes
+# every 30 days based on a random-walk function.
+beta <- interpolate(beta_times, beta_vals, "constant")
+
+output(beta) <- beta
 
 # total number of mosquitoes
 V <- Sv + sum(Ev[]) + Iv
@@ -52,6 +58,11 @@ init_Iv <- user()
 nrates <- user()
 dim(Ev) <- nrates
 
+beta_times[]<-user()
+beta_vals[]<-user()
+dim(beta_times)<-user()
+dim(beta_vals)<-user()
+
 # Ratio mosquitoes:humans
 # M <- user(10)
 
@@ -70,16 +81,10 @@ r <- user(1/100)
 # Length in mosquito latency period
 tau <- user(12)
 
-beta_volatility <- user()
-
-# Vector births/deaths - a piece-wise constant function that changes
-# every 30 days based on a random-walk function.
-initial(beta) <- -log(p)
-update(beta) <- beta * exp(rnorm(0, beta_volatility))
-
 #Check model equations
 N <- Sh + Ih
 output(Host_prev) <- Ih / N
 output(Vector_prev) <- Iv / V
 output(Ev_sum) <- sum(Ev[])
 output(V) <- V
+})

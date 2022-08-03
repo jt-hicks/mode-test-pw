@@ -1,6 +1,7 @@
 library("odin.dust")
 library("odin")
 library("patchwork")
+library('mcstate')
 source("MiP-given/model_parameters.R")
 source("MiP-given/equilibrium-init-create-stripped.R")
 
@@ -21,7 +22,7 @@ genRandWalk <- function(x,vol,randWalk) {
 EIR_times<-seq(0,1800,by=30)
 
 ### just a random walk on logscale
-EIR_volatility<-0.05
+EIR_volatility<-0.4
 EIR_vals=genRandWalk(length(EIR_times)-1,EIR_volatility,init_EIR)
 
 ##set up the simulation for the simualted data 
@@ -65,6 +66,7 @@ data_raw<-data.frame(t=out$t+30,tested=tested,positive=positive)
 #######################################
 
 ######## run particle filter with same model with same log(EIR) random walk but within odin.dust
+
 data <- mcstate::particle_filter_data(data_raw, time = "t", rate = NULL, initial_time = 0)
 
 
@@ -79,7 +81,14 @@ index <- function(info) {
   list(run = c(inc = info$index$prev),
        state = c(prev = info$index$prev))
 }
-stochastic_schedule <- seq(from = 60, by = 30, to = 1830)
+stochastic_schedule <- seq(from = 60, by = 30/2, to = 1830)
+mpl_pf <- model_param_list_create(EIR_SD = 0.9)
+
+pars_pf <- equilibrium_init_create_stripped(age_vector = init_age,
+                                         EIR = init_EIR,
+                                         ft = prop_treated,
+                                         model_param_list = mpl_pf,
+                                         het_brackets = het_brackets)
 #### NB the volatility and initial EIR is hard-coded in the odinmodelmatchedstoch bw lines 230 and 234###
 model <- odin.dust::odin_dust("original_malaria/odinmodelmatchedstoch.R")
 n_particles <- 100
@@ -88,12 +97,13 @@ set.seed(1)
 ### single with no parallelisation
 p_single <- mcstate::particle_filter$new(data, model, n_particles, compare,
                                   index = index, seed = 1L,
-                                  stochastic_schedule = stochastic_schedule
-                                  )
+                                  stochastic_schedule = stochastic_schedule,
+                                  ode_control = mode::mode_control(max_steps = 1e6),
+                                  n_threads = 4)
 
 ### takes about 15-20 seconds on my desktop 
 start.time <- Sys.time()
-lik_single <- p_single$run(pars, save_history = TRUE)
+lik_single <- p_single$run(pars_pf, save_history = TRUE)
 print(Sys.time()-start.time)
 history_single <- p_single$history()
 
@@ -113,9 +123,8 @@ p_para <- mcstate::particle_filter$new(data, model, n_particles, compare,
 )
 ## now takes 3-5 secs
 start.time <- Sys.time()
-lik_para<- p_para$run(pars, save_history = TRUE)
+p_para$run(pars, save_history = FALSE)
 print(Sys.time()-start.time)
-
 history_para <- p_para$history()
 ## but looks a bit less perfect :(
 matplot(data_raw$t, t(history_para[1, , -1]), type = "l",

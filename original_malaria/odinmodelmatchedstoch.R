@@ -228,17 +228,17 @@ FOI[,] <- EIR[i,j] * (if(IB[i,j]==0) b0 else b[i,j])
 # rate for age group * rate for biting category * FOI for age group * prop of
 # RANDOM WALK ON LOG EIR with SD hard coded
 DY<-user()
-EIR_SD<-0.05
+EIR_SD<-user()
 initial(log_EIR) <- log(100/DY)
 update(log_EIR) <-log_EIR+rnorm(0,1)*EIR_SD
 EIR[,] <- exp(log_EIR)*rel_foi[j] * foi_age[i]
 
 #EIR_td<-interpolate(EIR_times, EIR_valsd, "constant")
-#EIR_times[]<-user()
-EIR_vals[]<-user()
+# EIR_times[]<-user()
+# EIR_vals[]<-user()
 #EIR_valsd[]<-EIR_vals[i]/DY
 #dim(EIR_times)<-user()
-dim(EIR_vals)<-user()
+# dim(EIR_vals)<-user()
 #dim(EIR_valsd)<-length(EIR_vals)
 dim(foi_age) <- na
 foi_age[] <- user()
