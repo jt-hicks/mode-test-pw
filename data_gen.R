@@ -3,7 +3,6 @@ data_gen <- function(EIR_volatility,
                      model_file="original_malaria/odin_model_stripped_matched.R"){
 init_age <- c(0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 3.5, 5, 7.5, 10, 15, 20, 30, 40, 50, 60, 70, 80)
 
-init_EIR <- 100
 prop_treated <- 0.4
 rA_preg <- 0.00512821
 rU_preg <- 0.00906627
@@ -55,8 +54,13 @@ out <- mod$transform_variables(mod_run)
 # plot data and generate data
 plot(out$t,out$prev,col="white")
 lines(out$t,out$prev,col="blue",lwd=4)
-tested<-round(rnorm(length(out$prev),100,30))
+tested<-round(rnorm(length(out$prev),600,30))
 positive<-rbinom(length(out$prev),tested,out$prev)
-data_raw<-data.frame(t=out$t+30,tested=tested,positive=positive)
+data_raw<-data.frame(t=out$t+30,
+                     tested=tested,
+                     positive=positive,
+                     prev_true=out$prev,
+                     EIR_true=EIR_vals,
+                     inc_true=out$incunder5)
 return(data_raw)
 }
