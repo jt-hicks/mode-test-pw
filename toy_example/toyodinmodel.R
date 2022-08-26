@@ -19,7 +19,7 @@ foi_h <- a * bh * Iv
 #################
 # Rate of change of the susceptible vector compartment
 # beta * init_Sv: scale the interpolated emergence to the initial mosquito population size
-deriv(Sv) <- beta * init_Sv - foi_v * Sv - mu * Sv
+deriv(Sv) <- beta - foi_v * Sv - mu * Sv
 # Latent vector compartments (mutliple compartments to avoid delay function)
 deriv(Ev[1]) <- foi_v * Sv - (nrates/tau) * Ev[i] - mu * Ev[i]
 deriv(Ev[2:nrates]) <- (nrates/tau) * Ev[i - 1] - (nrates/tau) * Ev[i] - mu * Ev[i]
@@ -38,7 +38,7 @@ initial(Sh) <- init_Sh
 initial(Ih) <- init_Ih
 
 initial(Sv) <- init_Sv
-initial(Ev[]) <- 0
+initial(Ev[]) <- init_Ev
 initial(Iv) <- init_Iv
 
 ##############
@@ -79,7 +79,7 @@ beta_volatility <- user()
 init_beta <- user()
 initial(beta) <- init_beta
 update(beta) <- beta * exp(rnorm(0, beta_volatility))
-
+output(beta_out) <- beta
 #Check model equations
 N <- Sh + Ih
 output(Host_prev) <- Ih / N

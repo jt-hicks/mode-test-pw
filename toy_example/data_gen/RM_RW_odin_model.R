@@ -19,14 +19,19 @@ foi_h <- a * bh * Iv
 #################
 # Rate of change of the susceptible vector compartment
 # beta * init_Sv: scale the interpolated emergence to the initial mosquito population size
-deriv(Sv) <- beta * init_Sv - foi_v * Sv - mu * Sv
+deriv(Sv) <- beta - foi_v * Sv - mu * Sv
 # Latent vector compartments (mutliple compartments to avoid delay function)
 deriv(Ev[1]) <- foi_v * Sv - (nrates/tau) * Ev[i] - mu * Ev[i]
 deriv(Ev[2:nrates]) <- (nrates/tau) * Ev[i - 1] - (nrates/tau) * Ev[i] - mu * Ev[i]
 # Rate of change of the infectious vector population
 deriv(Iv) <- (nrates/tau) * Ev[nrates] - mu * Iv
 # Force of infection from humans to vectors
-foi_v <- a * bv * Ih
+foi_v <- a * bv * Ih                 
+# Vector births/deaths - a piece-wise constant function that changes
+# every 30 days based on a random-walk function.
+beta <- interpolate(beta_times, beta_vals, "constant")
+
+output(beta) <- beta
 
 # total number of mosquitoes
 V <- Sv + sum(Ev[]) + Iv
@@ -38,7 +43,7 @@ initial(Sh) <- init_Sh
 initial(Ih) <- init_Ih
 
 initial(Sv) <- init_Sv
-initial(Ev[]) <- 0
+initial(Ev[]) <- init_Ev[i]
 initial(Iv) <- init_Iv
 
 ##############
@@ -47,12 +52,17 @@ initial(Iv) <- init_Iv
 init_Sh <- user()
 init_Ih <- user()
 init_Sv <- user()
-init_Ev <- user()
+init_Ev[] <- user()
 init_Iv <- user()
-
 
 nrates <- user()
 dim(Ev) <- nrates
+dim(init_Ev) <- nrates
+
+beta_times[]<-user()
+beta_vals[]<-user()
+dim(beta_times)<-user()
+dim(beta_vals)<-user()
 
 # Ratio mosquitoes:humans
 # M <- user(10)
@@ -71,14 +81,6 @@ mu <- user()
 r <- user()
 # Length in mosquito latency period
 tau <- user()
-
-beta_volatility <- user()
-
-# Vector births/deaths - a piece-wise constant function that changes
-# every 30 days based on a random-walk function.
-init_beta <- user()
-initial(beta) <- init_beta
-update(beta) <- beta * exp(rnorm(0, beta_volatility))
 
 #Check model equations
 N <- Sh + Ih
