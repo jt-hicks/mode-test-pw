@@ -21,9 +21,9 @@ obj <- didehpc::queue_didehpc(ctx,config = config)
 obj$cluster_load(TRUE)
 obj$config
 
-t <- obj$enqueue(pf_loop(data_raw,n_loop = 500))
+t <- obj$enqueue(pf_loop(data_raw,n_loop = 500,volatility=0.3))
 start.time <- Sys.time()
-pf_loop(data_raw,n_loop = 10,volatility=0.5,freq=1)
+pf_loop(data_raw,n_loop = 10,volatility=0.3,freq=1)
 print(Sys.time()-start.time)
 
 t$status()
@@ -36,5 +36,5 @@ t$log()
 df <- as.data.frame(t$result())
 colnames(df) <- c(10,50,100,200,500)
 
-saveRDS(df,'C:/Users/jthicks/OneDrive - Imperial College London/Imperial_ResearchAssociate/PMCMC/Development/toymodel_lik_030822.rds')
+saveRDS(df,'C:/Users/jthicks/OneDrive - Imperial College London/Imperial_ResearchAssociate/PMCMC/Development/toymodel_lik_030822-2.rds')
 lapply(df,var)
