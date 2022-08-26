@@ -229,9 +229,11 @@ FOI[,] <- EIR[i,j] * (if(IB[i,j]==0) b0 else b[i,j])
 # RANDOM WALK ON LOG EIR with SD hard coded
 DY<-user()
 EIR_SD<-user()
-initial(log_EIR) <- log(100/DY)
+init_EIR <- user()
+initial(log_EIR) <- log(init_EIR/DY)
 update(log_EIR) <-log_EIR+rnorm(0,1)*EIR_SD
 EIR[,] <- exp(log_EIR)*rel_foi[j] * foi_age[i]
+output(EIR_out) <- exp(log_EIR)*DY
 
 #EIR_td<-interpolate(EIR_times, EIR_valsd, "constant")
 # EIR_times[]<-user()
