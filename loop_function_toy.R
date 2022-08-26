@@ -1,4 +1,4 @@
-pf_loop <- function(data_raw,n_loop,n_particles=100,volatility=0.5,freq=1){
+pf_loop_toy <- function(data_raw,n_loop,n_particles=100,volatility=0.5,freq=1){
   data <- mcstate::particle_filter_data(data_raw, time = "t", rate = NULL, initial_time = 0)
   
   index <- function(info) {

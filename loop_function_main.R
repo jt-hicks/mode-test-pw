@@ -1,5 +1,5 @@
-pf_loop <- function(data_file,n_loop,n_particles=c(100,200,500),volatility=0.5,freq=1,
-                    init_EIR=100){
+pf_loop <- function(volatility=0.5,data_file,n_loop,n_particles=200,freq=1,
+                    init_EIR=100,atol=NULL,rtol=NULL,max_steps=NULL){
   start.time <- Sys.time()
 
   init_age <- c(0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 3.5, 5, 7.5, 10, 15, 20, 30, 40, 50, 60, 70, 80)
@@ -8,7 +8,7 @@ pf_loop <- function(data_file,n_loop,n_particles=c(100,200,500),volatility=0.5,f
   rU_preg <- 0.00906627
   het_brackets <- 5
 
-  data <- mcstate::particle_filter_data(data_file, time = "t", rate = NULL, initial_time = 0)
+  data <- mcstate::particle_filter_data(as.data.frame(data_file), time = "t", rate = NULL, initial_time = 0)
   
   index <- function(info) {
     list(run = c(inc = info$index$prev),
@@ -24,8 +24,9 @@ pf_loop <- function(data_file,n_loop,n_particles=c(100,200,500),volatility=0.5,f
   
   lik_list <- function(i,p,pars){
     start.time <- Sys.time()
-    run <- p$run(pars)
-    time <- Sys.time()-start.time
+    run <- tryCatch(p$run(pars), 
+                    error=function(e) conditionMessage(e))
+    time <- difftime(Sys.time(), start.time, units = "secs")
     temp <- c(likelihood=run,time=time)
     return(temp)
   }
@@ -49,7 +50,7 @@ pf_loop <- function(data_file,n_loop,n_particles=c(100,200,500),volatility=0.5,f
     p <- mcstate::particle_filter$new(data, model, n_particles[k], compare,
                                       index = index, #seed = 1L,
                                       stochastic_schedule = stochastic_schedule,
-                                      ode_control = mode::mode_control(max_steps = 5e5),
+                                      ode_control = mode::mode_control(max_steps=max_steps, atol=atol, rtol=rtol),
                                       n_threads=4)
     # lik_hist[,k] <- t(unlist(parallel::parLapply(NULL,1:n_loop,fun = lik_list, p=p, pars=pars)))
     temp <- data.frame(likelihood=numeric(),time=numeric())
