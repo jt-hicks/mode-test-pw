@@ -1,14 +1,10 @@
 
 run_pmcmc <- function(data_raw,
                       n_particles=200,
-                      EIR_vol,
+                      proposal_matrix,
+                      # EIR_vol,
                       # proposal_dist,
-                      init_age = c(0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 3.5, 5, 7.5, 10, 15, 20, 30, 40, 50, 60, 70, 80),
-                      init_EIR = 100,
-                      prop_treated = 0.4,
-                      rA_preg = 0.00512821,
-                      rU_preg = 0.00906627,
-                      het_brackets = 5,
+                      # init_EIR = 100,
                       max_steps = 1e7,
                       atol = 1e-3,
                       rtol = 1e-6){
@@ -30,15 +26,24 @@ run_pmcmc <- function(data_raw,
                    inc = info$index$incunder5))
   }
   
-  stochastic_schedule <- seq(from = 60, by = 30, to = 1830)
+  stochastic_schedule <- seq(from = 30, by = 30, to = 1830)
   
-  mpl_pf <- model_param_list_create(EIR_SD=EIR_vol)
   
-  state <- equilibrium_init_create_stripped(age_vector = init_age,
-                                            EIR = init_EIR,
-                                            ft = prop_treated,
-                                            model_param_list = mpl_pf,
-                                            het_brackets = het_brackets)
+  transform <- function(theta) {
+    
+    init_age <- c(0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 3.5, 5, 7.5, 10, 15, 20, 30, 40, 50, 60, 70, 80)
+    prop_treated <- 0.4
+    het_brackets = 5
+    
+    init_EIR <- exp(theta[["log_init_EIR"]])
+    EIR_vol <- theta[["EIR_SD"]]
+    mpl_pf <- model_param_list_create(EIR_SD=EIR_vol)
+    equilibrium_init_create_stripped(age_vector = init_age,
+                                     EIR = init_EIR,
+                                     ft = prop_treated,
+                                     model_param_list = mpl_pf,
+                                     het_brackets = het_brackets)
+  }
   
   #### NB the volatility and initial EIR is hard-coded in the odinmodelmatchedstoch bw lines 230 and 234###
   model <- odin.dust::odin_dust("original_malaria/odinmodelmatchedstoch.R")
@@ -64,25 +69,16 @@ run_pmcmc <- function(data_raw,
     n_threads_total = 4)
   
   ### Set pmcmc parameters
-  ##Need to convert equilibrium into pmcmc parameters?
-  pmcmc_par <- function(name){
-    print(name)
-    mcstate::pmcmc_parameter(name,initial = 1)
-  }
   EIR_SD <- mcstate::pmcmc_parameter("EIR_SD", 0.3, min = 0,max=0.9,
                                      prior = function(p) dexp(p, rate = 5, log = TRUE))
-  # init_EIR <- mcstate::pmcmc_parameter("init_EIR", 100, min = 0, max = 1000, 
-  #                                      prior = function(p) dgamma(p, shape = 1, scale = 0.01, log = TRUE))
+  log_init_EIR <- mcstate::pmcmc_parameter("log_init_EIR", 1.5, min = -8.5, max = 8.5,
+                                       prior = function(p) dgamma(exp(p), shape = 1, rate = 0.01, log = TRUE) + p)
   
-  equil_list <- lapply(names(state),pmcmc_par)
-  names(equil_list) <- names(state)
-  proposal_matrix <- diag(0.005, length(equil_list))
-  # proposal_matrix[1,1:2] <- proposal_dist[1,]
-  # proposal_matrix[2,1:2] <- proposal_dist[2,]
-  list <- append(list(EIR_SD = EIR_SD), equil_list[-length(equil_list)])
-  mcmc_pars <- mcstate::pmcmc_parameters$new(list,
-                                             proposal_matrix)
-  mcmc_pars <- mcmc_pars$fix(state[-length(state)])
+  pars = list(EIR_SD = EIR_SD, log_init_EIR = log_init_EIR)
+
+  mcmc_pars <- mcstate::pmcmc_parameters$new(pars,
+                                             proposal_matrix,
+                                             transform = transform)
 
   ### Run pMCMC
   start.time <- Sys.time()
