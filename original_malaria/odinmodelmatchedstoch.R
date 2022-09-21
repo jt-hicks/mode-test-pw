@@ -230,8 +230,9 @@ FOI[,] <- EIR[i,j] * (if(IB[i,j]==0) b0 else b[i,j])
 DY<-user()
 EIR_SD<-user()
 init_EIR <- user()
+max_EIR <- user()
 initial(log_EIR) <- log(init_EIR/DY)
-update(log_EIR) <-log_EIR+rnorm(0,1)*EIR_SD
+update(log_EIR) <-min(log_EIR+rnorm(0,1)*EIR_SD,log(max_EIR/DY))
 EIR[,] <- exp(log_EIR)*rel_foi[j] * foi_age[i]
 output(EIR_out) <- exp(log_EIR)*DY
 
@@ -426,7 +427,15 @@ dim(prev0to59) <- c(age59,nh)
 prev0to59[1:age59,] <- T[i,j] + D[i,j]  + A[i,j]*p_det[i,j]
 output(prev) <- sum(prev0to59[,])/sum(den[1:age59])
 output(age59)<-age59
+dim(prevall) <- c(na,nh)
+prevall[,] <- T[i,j] + D[i,j]  + A[i,j]*p_det[i,j]
+output(prev_all) <- sum(prevall[,])/sum(den[])
 
+##Get prevalence by each age group
+dim(prevbyage) <- c(na,nh)
+prevbyage[,] <- T[i,j] + D[i,j]  + A[i,j]*p_det[i,j]
+dim(prevout) <- c(na)
+output(prevout[]) <- sum(prevbyage[i,])/den[i]
 
 # clinical incidence
 dim(clin_inc0tounder5) <- c(age59,nh)
