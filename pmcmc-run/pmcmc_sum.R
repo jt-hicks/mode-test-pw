@@ -401,3 +401,45 @@ windows(90,30)
 simplot <- ggarrange(simprev,simeir,siminc,
                      ncol = 3, nrow = 1)
 simplot
+
+
+##Cluster runs - prevalence by age
+pmcmc_run1 <- readRDS('cmis_all_run1.RDS')
+pmcmc_run3 <- readRDS('cmis_all_run3.RDS')
+history_run1 <- pmcmc_run1$trajectories$state
+history_run3 <- pmcmc_run3$trajectories$state
+
+#[agegroup,mcmc sample,time]
+df_ages_run1 <- data.frame(agegroup=numeric(),
+                      month=numeric(),
+                      value=numeric())
+for(age in 4:24){
+  for(time in 2:62){
+    temp <- data.frame(agegroup=age-3,
+                       month=time,
+                       value=history_run1[age,101:1000,time])
+    df_ages_run1 <- rbind(df_ages_run1,temp)
+  }
+}
+df_ages_run3 <- data.frame(agegroup=numeric(),
+                           month=numeric(),
+                           value=numeric())
+for(age in 4:24){
+  for(time in 2:62){
+    temp <- data.frame(agegroup=age-3,
+                       month=time,
+                       value=history_run3[age,101:1000,time])
+    df_ages_run3 <- rbind(df_ages,temp)
+  }
+}
+df_ages_both <- rbind(df_ages_run1,df_ages_run3)
+rm(df_ages_run1,df_ages_run3)
+
+windows(160,90)
+ggplot(df_ages_both,aes(x=as.factor(agegroup),y=value))+
+  geom_boxplot()+
+  facet_wrap(~month)
+
+ggplot(df_ages[df_ages$month<=13,],aes(x=as.factor(agegroup),y=value))+
+  geom_boxplot()+
+  facet_wrap(~month)
