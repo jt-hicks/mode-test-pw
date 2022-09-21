@@ -2,12 +2,14 @@
 run_pmcmc <- function(data_raw,
                       n_particles=200,
                       proposal_matrix,
+                      max_EIR=1000,
                       # EIR_vol,
                       # proposal_dist,
                       # init_EIR = 100,
                       max_steps = 1e7,
                       atol = 1e-3,
-                      rtol = 1e-6){
+                      rtol = 1e-6,
+                      n_steps = 500){
   ######## run pMCMC with same model with same log(EIR) random walk but within odin.dust
   
   data <- mcstate::particle_filter_data(data_raw, time = "t", rate = NULL, initial_time = 0)
@@ -20,10 +22,11 @@ run_pmcmc <- function(data_raw,
   }
   
   index <- function(info) {
-    list(run = c(prev = info$index$prev),
-         state = c(prev = info$index$prev,
+    list(run = c(prev = info$index$prev_all),
+         state = c(prev = info$index$prev_all,
                    EIR = info$index$EIR_out,
-                   inc = info$index$incunder5))
+                   inc = info$index$inc,
+                   prevage = info$index$prevout))
   }
   
   stochastic_schedule <- seq(from = 30, by = 30, to = 1830)
@@ -37,7 +40,7 @@ run_pmcmc <- function(data_raw,
     
     init_EIR <- exp(theta[["log_init_EIR"]])
     EIR_vol <- theta[["EIR_SD"]]
-    mpl_pf <- model_param_list_create(EIR_SD=EIR_vol)
+    mpl_pf <- model_param_list_create(EIR_SD=EIR_vol,max_EIR=max_EIR)
     equilibrium_init_create_stripped(age_vector = init_age,
                                      EIR = init_EIR,
                                      ft = prop_treated,
@@ -58,7 +61,6 @@ run_pmcmc <- function(data_raw,
                                      n_threads = 4)
   
   ### Set pmcmc control
-  n_steps <- 500
   control <- mcstate::pmcmc_control(
     n_steps,
     save_state = TRUE,
@@ -69,10 +71,10 @@ run_pmcmc <- function(data_raw,
     n_threads_total = 4)
   
   ### Set pmcmc parameters
-  EIR_SD <- mcstate::pmcmc_parameter("EIR_SD", 0.3, min = 0,max=0.9,
+  EIR_SD <- mcstate::pmcmc_parameter("EIR_SD", 0.3, min = 0,max=2.5,
                                      prior = function(p) dexp(p, rate = 5, log = TRUE))
   log_init_EIR <- mcstate::pmcmc_parameter("log_init_EIR", 1.5, min = -8.5, max = 8.5,
-                                       prior = function(p) dgamma(exp(p), shape = 1, rate = 0.01, log = TRUE) + p)
+                                       prior = function(p) dnorm(p, mean = 0, sd = 10, log = TRUE) + p) #Add p to adjust for sampling on log scale
   
   pars = list(EIR_SD = EIR_SD, log_init_EIR = log_init_EIR)
 
