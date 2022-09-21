@@ -1,9 +1,11 @@
 data_gen <- function(EIR_volatility,
                      init_EIR=100,
+                     max_EIR=1000,
                      model_file="original_malaria/odin_model_stripped_matched.R"){
+cat('EIR_vol = ',EIR_volatility,' init_EIR = ',init_EIR,'\n')
 init_age <- c(0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 3.5, 5, 7.5, 10, 15, 20, 30, 40, 50, 60, 70, 80)
 
-prop_treated <- 0.4
+prop_treated <- 0
 rA_preg <- 0.00512821
 rU_preg <- 0.00906627
 het_brackets <- 5
@@ -12,7 +14,7 @@ het_brackets <- 5
 # generate random walk of EIR (recursive fn)
 genRandWalk <- function(x,vol,randWalk) {
   if (x == 0)    return (randWalk)
-  else return(genRandWalk(x-1,vol,c(randWalk,exp(log(randWalk[length(randWalk)])+rnorm(1)*vol))))
+  else return(genRandWalk(x-1,vol,c(randWalk,min(exp(log(randWalk[length(randWalk)])+rnorm(1)*vol),max_EIR))))
 }
 EIR_times<-seq(0,1800,by=30)
 
@@ -45,7 +47,9 @@ tt <- seq(0, time, out_step)
 
 # run the simulation to base the data
 start.time <- Sys.time()
-mod_run <- mod$run(tt)
+mod_run <- mod$run(tt, step_max_n = 1e7,
+                   atol = 1e-5,
+                   rtol = 1e-5)
 print(Sys.time()-start.time)
 
 # shape output
@@ -54,13 +58,14 @@ out <- mod$transform_variables(mod_run)
 # plot data and generate data
 plot(out$t,out$prev,col="white")
 lines(out$t,out$prev,col="blue",lwd=4)
-tested<-round(rnorm(length(out$prev),600,30))
+tested<-round(rnorm(length(out$prev),220,40))
 positive<-rbinom(length(out$prev),tested,out$prev)
 data_raw<-data.frame(t=out$t+30,
                      tested=tested,
                      positive=positive,
                      prev_true=out$prev,
                      EIR_true=EIR_vals,
+                     vol_true=EIR_volatility,
                      inc_true=out$incunder5)
 return(data_raw)
 }
