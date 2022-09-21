@@ -422,6 +422,9 @@ prev0to59[1:age59,] <- T[i,j] + D[i,j]  + A[i,j]*p_det[i,j]
 output(prev) <- sum(prev0to59[,])/sum(den[1:age59])
 output(age59)<-age59
 
+dim(prevall) <- c(na,nh)
+prevall[,] <- T[i,j] + D[i,j]  + A[i,j]*p_det[i,j]
+output(prev_all) <- sum(prevall[,])/sum(den[])
 
 # clinical incidence
 dim(clin_inc0tounder5) <- c(age59,nh)
