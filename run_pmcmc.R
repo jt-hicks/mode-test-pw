@@ -15,14 +15,23 @@ run_pmcmc <- function(data_raw,
   data <- mcstate::particle_filter_data(data_raw, time = "t", rate = NULL, initial_time = 0)
   
   compare <- function(state, observed, pars = NULL) {
-    dbinom(x = observed$positive,
-           size = observed$tested,
-           prob = state[1, ],
-           log = TRUE)
+    positive_by_age <- unlist(observed[grep('positive_',names(observed))])
+    tested_by_age <- unlist(observed[grep('tested_',names(observed))])
+
+    sapply(1:ncol(state), function(i) sum(dbinom(x=positive_by_age,size=tested_by_age,prob=state[,i],log=TRUE),na.rm = TRUE))
   }
   
+  ##Simple compare function for troubleshooting
+  # compare <- function(state, observed, pars = NULL) {
+  #   dbinom(x = observed$positive_1,
+  #          size = observed$tested_1,
+  #          prob = state[1,],
+  #          log = TRUE)
+  # }
+  
+  
   index <- function(info) {
-    list(run = c(prev = info$index$prev_all),
+    list(run = c(prev = info$index$prevout),
          state = c(prev = info$index$prev_all,
                    EIR = info$index$EIR_out,
                    inc = info$index$inc,
@@ -33,14 +42,19 @@ run_pmcmc <- function(data_raw,
   
   
   transform <- function(theta) {
-    
-    init_age <- c(0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 3.5, 5, 7.5, 10, 15, 20, 30, 40, 50, 60, 70, 80)
+    init_age <- c(0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 3.5, 4, 5, 7.5, 10, 11, 12, 13, 14, 15,
+                  16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 50, 60, 70, 80)
+    age_groups <- c(0, 4, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 80)
+    ag_dim <- as.double(length(age_groups))
+
+    age_convert <- sapply(1:length(age_groups),function(i) as.numeric(which(init_age == age_groups[i])[1]))
+    # age_convert <- c(0, 4, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 80)
     prop_treated <- 0.4
-    het_brackets = 5
+    het_brackets <- 5
     
     init_EIR <- exp(theta[["log_init_EIR"]])
     EIR_vol <- theta[["EIR_SD"]]
-    mpl_pf <- model_param_list_create(EIR_SD=EIR_vol,max_EIR=max_EIR)
+    mpl_pf <- model_param_list_create(EIR_SD=EIR_vol,max_EIR=max_EIR,ag_dim=ag_dim,age_convert=age_convert)
     equilibrium_init_create_stripped(age_vector = init_age,
                                      EIR = init_EIR,
                                      ft = prop_treated,
@@ -68,7 +82,9 @@ run_pmcmc <- function(data_raw,
     progress = TRUE,
     n_chains = 1,
     n_workers = 1,
-    n_threads_total = 4)
+    n_threads_total = 4,
+    rerun_every = 50,
+    rerun_random = TRUE)
   
   ### Set pmcmc parameters
   EIR_SD <- mcstate::pmcmc_parameter("EIR_SD", 0.3, min = 0,max=2.5,
