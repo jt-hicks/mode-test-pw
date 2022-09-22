@@ -431,11 +431,18 @@ dim(prevall) <- c(na,nh)
 prevall[,] <- T[i,j] + D[i,j]  + A[i,j]*p_det[i,j]
 output(prev_all) <- sum(prevall[,])/sum(den[])
 
-##Get prevalence by each age group
-dim(prevbyage) <- c(na,nh)
-prevbyage[,] <- T[i,j] + D[i,j]  + A[i,j]*p_det[i,j]
-dim(prevout) <- c(na)
-output(prevout[]) <- sum(prevbyage[i,])/den[i]
+#Get prevalence by each age group
+ag_dim <- user()
+age_convert[] <- user()
+dim(age_convert) <- ag_dim
+prevdim <- ag_dim-1
+dim(prevbyage) <- prevdim
+prevbyage[1] <- sum(prevall[age_convert[i]:age_convert[i+1],])/sum(den[age_convert[i]:age_convert[i+1]])
+prevbyage[2:prevdim] <- sum(prevall[(age_convert[i]+1):age_convert[i+1],])/sum(den[(age_convert[i]+1):age_convert[i+1]])
+
+
+dim(prevout) <- prevdim
+output(prevout[]) <- prevbyage[i]
 
 # clinical incidence
 dim(clin_inc0tounder5) <- c(age59,nh)
