@@ -5,7 +5,7 @@ data_gen <- function(EIR_volatility,
 cat('EIR_vol = ',EIR_volatility,' init_EIR = ',init_EIR,'\n')
 init_age <- c(0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 3.5, 5, 7.5, 10, 15, 20, 30, 40, 50, 60, 70, 80)
 
-prop_treated <- 0
+prop_treated <- 0.4
 rA_preg <- 0.00512821
 rU_preg <- 0.00906627
 het_brackets <- 5
