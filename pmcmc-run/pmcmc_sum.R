@@ -15,21 +15,22 @@ addCIs<-function(df,Ys,Ns){
   df$mean<-NA
   df$upper<-NA
   df$lower<-NA
-  CIs<-binom.confint(Ys,Ns,method="exact")
+  CIs<-ifelse(is.na(Ns) | is.na(Ys),NA,binom.confint(Ys,Ns,method="exact"))
   df$mean[Ns>0]<-CIs$mean[Ns>0]
   df$upper[Ns>0]<-CIs$upper[Ns>0]
   df$lower[Ns>0]<-CIs$lower[Ns>0]
   return(df)
 }
 plot_particle_filter <- function(history, true_history, times, obs_end = NULL) {
-  if (is.null(obs_end)) {
-    obs_end <- max(times)
-  }
   cis <- addCIs(true_history,true_history$positive,true_history$tested)
+  if (obs_end>max(times)) {
+    times <- c(times,seq(max(times)+30,obs_end,30))
+    cis[(nrow(cis)+1):length(times),] <- NA
+  }
   par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
   matplot(times, t(history[1, , -1]), type = "l",
           xlab = "Time", ylab = "Prevalence",
-          col = "#A6CEE3", lty = 1, ylim = range(cis[,4:6]))
+          col = "#A6CEE3", lty = 1)
   matpoints(times, cis$mean, pch = 19,
             col = "#1F78B4")
   arrows(cis$t, cis$lower, cis$t, cis$upper, length=0.05, angle=90, code=3, col = "#1F78B4")
@@ -37,7 +38,7 @@ plot_particle_filter <- function(history, true_history, times, obs_end = NULL) {
 
 
 pmcmc_desktop_1 <- as.list(readRDS('./pmcmc-run/pmcmc_desktop_1.RDS'))
-mcmc_1 <- coda::as.mcmc(cbind(pmcmc_desktop_1$probabilities, pmcmc_desktop_1$pars),
+mcmc_1 <- coda::as.mcmc(cbind(pmcmc_run$probabilities, pmcmc_run$pars),
                         )
 1 - coda::rejectionRate(mcmc_1)
 coda::effectiveSize(mcmc_1)
@@ -443,3 +444,40 @@ ggplot(df_ages_both,aes(x=as.factor(agegroup),y=value))+
 ggplot(df_ages[df_ages$month<=13,],aes(x=as.factor(agegroup),y=value))+
   geom_boxplot()+
   facet_wrap(~month)
+
+##By Age group fitting
+mcmc_1 <- coda::as.mcmc(cbind(pmcmc_run$probabilities, pmcmc_run$pars),
+)
+1 - coda::rejectionRate(mcmc_1)
+coda::effectiveSize(mcmc_1)
+cov(pmcmc_run$pars)
+summary(mcmc_1)
+windows(60,50)
+plot(mcmc_1)
+history <- pmcmc_run$trajectories$state
+
+df_ages_run <- data.frame(agegroup=numeric(),
+                           month=numeric(),
+                           value=numeric())
+for(age in 4:28){
+  for(time in 2:62){
+    temp <- data.frame(agegroup=age-3,
+                       month=time,
+                       value=history[age,21:100,time])
+    df_ages_run <- rbind(df_ages_run,temp)
+  }
+}
+
+windows(160,90)
+theme_set(theme_minimal()+
+            theme(panel.grid.major = element_blank(),
+                  panel.grid.minor = element_blank(),
+                  strip.background = element_blank(),
+                  panel.border = element_rect(colour = "black",fill=NA)))
+
+
+ggplot(df_ages_run,aes(x=as.factor(agegroup),y=value))+
+  geom_boxplot()+
+  facet_wrap(~month)
+ggplot(df_ages_run[df_ages_run$month==2,],aes(x=as.factor(agegroup),y=value))+
+  geom_boxplot()
