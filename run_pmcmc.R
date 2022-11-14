@@ -9,18 +9,50 @@ run_pmcmc <- function(data_raw,
                       max_steps = 1e7,
                       atol = 1e-3,
                       rtol = 1e-6,
-                      n_steps = 500){
+                      n_steps = 500,
+                      n_threads = 4){
   ######## run pMCMC with same model with same log(EIR) random walk but within odin.dust
-  
+
   data <- mcstate::particle_filter_data(data_raw, time = "t", rate = NULL, initial_time = 0)
   
+  # compare <- function(state, observed, pars = NULL) {
+  #   positive_by_age <- unlist(observed[grep('positive_',names(observed))])
+  #   tested_by_age <- unlist(observed[grep('tested_',names(observed))])
+  # 
+  #   sapply(1:ncol(state), function(i) sum(dbinom(x=positive_by_age,size=tested_by_age,prob=state[,i],log=TRUE),na.rm = TRUE))
+  # }
+  # 
   compare <- function(state, observed, pars = NULL) {
-    positive_by_age <- unlist(observed[grep('positive_',names(observed))])
-    tested_by_age <- unlist(observed[grep('tested_',names(observed))])
-
-    sapply(1:ncol(state), function(i) sum(dbinom(x=positive_by_age,size=tested_by_age,prob=state[,i],log=TRUE),na.rm = TRUE))
+    positive_by_age <- unlist(observed[grep('positive_cmis',names(observed))])
+    tested_by_age <- unlist(observed[grep('tested_cmis',names(observed))])
+    
+    positive_by_age_g1 <- unlist(observed[grep('positive_g1_',names(observed))])
+    tested_by_age_g1 <- unlist(observed[grep('tested_g1_',names(observed))])
+    positive_by_age_g2_3 <- unlist(observed[grep('positive_g2_',names(observed))])
+    tested_by_age_g2_3 <- unlist(observed[grep('tested_g2_',names(observed))])
+    positive_by_age_g3p <- unlist(observed[grep('positive_g3_',names(observed))])
+    tested_by_age_g3p <- unlist(observed[grep('tested_g3_',names(observed))])
+    
+    # CBA_mat<-state[first_cat:second_cat,]
+    g1_OR <- 1.1422
+    g2_3_OR <- 0.8599
+    g3p_OR <- 0.9137
+    g1_mat<-change_prev_by_OR(state[5:24,],g1_OR)
+    g2_3_mat<-change_prev_by_OR(state[5:24,],g2_3_OR)
+    g3p_mat<-change_prev_by_OR(state[5:24,],g3p_OR)
+    
+    sapply(1:ncol(state), function(i){
+      sum(dbinom(x=positive_by_age,size=tested_by_age,prob=state[,i],log=TRUE),na.rm = TRUE)+
+        sum(dbinom(x=positive_by_age_g1,size=tested_by_age_g1,prob=g1_mat[,i],log=TRUE),na.rm = TRUE)+
+        sum(dbinom(x=positive_by_age_g2_3,size=tested_by_age_g2_3,prob=g2_3_mat[,i],log=TRUE),na.rm = TRUE)+
+        sum(dbinom(x=positive_by_age_g3p,size=tested_by_age_g3p,prob=g3p_mat[,i],log=TRUE),na.rm = TRUE)
+    })
   }
   
+  change_prev_by_OR<-function(prev,OR){
+    get_odds<-prev/(1-prev)*OR
+    return(get_odds/(1+get_odds))
+  }
   ##Simple compare function for troubleshooting
   # compare <- function(state, observed, pars = NULL) {
   #   dbinom(x = observed$positive_1,
@@ -38,7 +70,7 @@ run_pmcmc <- function(data_raw,
                    prevage = info$index$prevout))
   }
   
-  stochastic_schedule <- seq(from = 30, by = 30, to = 1830)
+  stochastic_schedule <- seq(from = 30, by = 30, to = max(data$t_end))
   
   
   transform <- function(theta) {
@@ -72,7 +104,7 @@ run_pmcmc <- function(data_raw,
                                      index = index, seed = 1L,
                                      stochastic_schedule = stochastic_schedule,
                                      ode_control = mode::mode_control(max_steps = max_steps, atol = atol, rtol = rtol),
-                                     n_threads = 4)
+                                     n_threads = n_threads)
   
   ### Set pmcmc control
   control <- mcstate::pmcmc_control(
@@ -82,7 +114,7 @@ run_pmcmc <- function(data_raw,
     progress = TRUE,
     n_chains = 1,
     n_workers = 1,
-    n_threads_total = 4,
+    n_threads_total = n_threads,
     rerun_every = 50,
     rerun_random = TRUE)
   
