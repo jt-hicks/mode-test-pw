@@ -317,3 +317,122 @@ ggplot(df_ages,aes(x=as.factor(agegroup),y=value))+
 ggplot(df_ages[df_ages$month<=13,],aes(x=as.factor(agegroup),y=value))+
   geom_boxplot()+
   facet_wrap(~month)
+
+
+##PMCMC cluster for fitting prev by age
+byage_1 <- obj$enqueue(run_pmcmc(data=data_raw_cmis_byage,proposal_matrix=matrix(c(0.0336,-0.000589,-0.000589,0.049420),nrow=2),
+            n_particles=200,
+            max_EIR=1000,
+            max_steps = 1e7,
+            atol = 1e-5,
+            rtol = 1e-6,
+            n_steps = 1000))
+
+byage_1$status()
+byage_1$log()
+
+byage_2 <- obj$enqueue(run_pmcmc(data=data_raw_cmis_byage,proposal_matrix=matrix(c(0.0336,-0.000589,-0.000589,0.049420),nrow=2),
+                                 n_particles=200,
+                                 max_EIR=1000,
+                                 max_steps = 1e7,
+                                 atol = 1e-5,
+                                 rtol = 1e-6,
+                                 n_steps = 1000))
+byage_2$status()
+byage_2$log()
+
+##Set up cluster##
+root <- "T:/jth/contexts"
+sources <- c("run_pmcmc.R",
+             "MiP-given/model_parameters.R","MiP-given/equilibrium-init-create-stripped.R")
+
+
+ctx <- context::context_save("T:/jth/contexts", sources = sources,
+                             packages = c('statmod','coda'),
+                             package_sources = conan::conan_sources(c("mrc-ide/odin.dust",'mrc-ide/mcstate')))
+config_32 <- didehpc::didehpc_config(cores = 32, parallel = TRUE)
+obj_32 <- didehpc::queue_didehpc(ctx,config = config_32)
+
+obj_32$cluster_load(TRUE)
+obj_32$config
+obj_32$login()
+
+byage_3 <- obj_32$enqueue(run_pmcmc(data=ANC_cMIS_for_pmcmc,proposal_matrix=matrix(c(0.0336,-0.000589,-0.000589,0.049420),nrow=2),
+                                 n_particles=200,
+                                 max_EIR=1000,
+                                 max_steps = 1e7,
+                                 atol = 1e-5,
+                                 rtol = 1e-6,
+                                 n_steps = 1000,
+                                 n_threads = 32))
+byage_3$status()
+byage_3$log()
+
+byage_4 <- obj_32$enqueue(run_pmcmc(data=ANC_cMIS_for_pmcmc,proposal_matrix=matrix(c(0.0336,-0.000589,-0.000589,0.049420),nrow=2),
+                                    n_particles=200,
+                                    max_EIR=1000,
+                                    max_steps = 1e7,
+                                    atol = 1e-5,
+                                    rtol = 1e-6,
+                                    n_steps = 1000,
+                                    n_threads = 32))
+byage_4$status()
+byage_4$log()
+byage_4$times()
+
+pmcmc_byage3 <- byage_3$result()
+saveRDS(pmcmc_byage3,'C:/Users/jthicks/OneDrive - Imperial College London/Imperial_ResearchAssociate/PregnancyModel/WesternKenya/pmcmc/pmcmc_byage3_ANCcMIS_270922.rds')
+
+byage3_mcmc <- coda::as.mcmc(cbind(pmcmc_byage3$probabilities, pmcmc_byage3$pars))
+
+
+windows(60,50)
+1 - coda::rejectionRate(byage3_mcmc)
+coda::effectiveSize(byage3_mcmc)
+plot(byage3_mcmc)
+summary(byage3_mcmc)
+history_byage3 <- pmcmc_byage3$trajectories$state
+
+pmcmc_byage4 <- byage_4$result()
+saveRDS(pmcmc_byage4,'C:/Users/jthicks/OneDrive - Imperial College London/Imperial_ResearchAssociate/PregnancyModel/WesternKenya/pmcmc/pmcmc_byage4_ANCcMIS_270922.rds')
+
+byage4_mcmc <- coda::as.mcmc(cbind(pmcmc_byage4$probabilities, pmcmc_byage4$pars))
+
+windows(60,50)
+1 - coda::rejectionRate(byage4_mcmc)
+coda::effectiveSize(byage4_mcmc)
+plot(byage4_mcmc)
+summary(byage4_mcmc)
+history_byage4 <- pmcmc_byage4$trajectories$state
+
+color_scheme_set("mix-pink-blue")
+
+##Extract run trajectories and remove burnin (50 steps)
+eir_history_byage3 <- data.frame(t(history_byage3['EIR', , -1]))
+long_eir_history_byage3 <- eir_history_byage3%>% mutate(t=c(1:nrow(eir_history_byage3)))%>%
+  melt(id='t')
+
+ggplot(long_eir_history_byage3)+
+  geom_line(aes(x=t,y=value,group=variable),col = "#A6CEE3",alpha=1)+
+  # scale_y_log10(breaks=c(.001,0.01,.1,1,10,100,1000),labels=c(.001,0.01,.1,1,10,100,1000))+
+  labs(x='Time (days)',y='EIR')
+
+eir_history_byage3 <- data.frame(t(history_byage3['EIR', 51:1000, -1]))
+long_eir_history_byage3 <- eir_history_byage3%>% mutate(t=c(1:nrow(eir_history_byage3)))%>%
+  melt(id='t')
+
+ggplot(long_eir_history_byage3)+
+  geom_line(aes(x=t,y=value,group=variable),col = "#A6CEE3",alpha=0.2)+
+  scale_y_log10(breaks=c(.001,0.01,.1,1,10,100,1000),labels=c(.001,0.01,.1,1,10,100,1000))+
+  labs(x='Time (days)',y='EIR')
+
+eir_history_byage4 <- data.frame(t(history_byage4['EIR', 51:1000, -1]))
+long_eir_history_byage4 <- eir_history_byage4%>% mutate(t=c(1:nrow(eir_history_byage4)))%>%
+  melt(id='t')
+
+ggplot(long_eir_history_byage4)+
+  geom_line(aes(x=t,y=value,group=variable),col = "#A6CEE3",alpha=0.2)+
+  scale_y_log10(breaks=c(.001,0.01,.1,1,10,100,1000),labels=c(.001,0.01,.1,1,10,100,1000))+
+  labs(x='Time (days)',y='EIR')
+
+history_byage4_trunc <- history_byage3[,,]
