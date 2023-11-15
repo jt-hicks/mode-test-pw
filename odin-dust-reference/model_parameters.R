@@ -284,7 +284,7 @@ model_param_list_create <- function(
 
   # Fertility parameters
   #Gravidity inputs
-  MZ_multi_rates <- readRDS('mode/MZ_multi_rates.rds')
+  MZ_multi_rates <- readRDS('odin-dust-reference/MZ_multi_rates.rds')
   MZ_multi_rates <- MZ_multi_rates[,-ncol(MZ_multi_rates)]
   mp_list$time_brackets<-c(seq(6,420,by=6))
   mp_list$time_diffs<-(mp_list$time_brackets[2:length(mp_list$time_brackets)]-mp_list$time_brackets[1:(length(mp_list$time_brackets)-1)])/12*365
